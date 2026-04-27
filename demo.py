@@ -57,11 +57,21 @@ def main() -> int:
     # ── target selection ─────────────────────────────────────────────
     detector = Detector(cfg["detector"])
     labels_path = Path(cfg["detector"].get("labels_path", ""))
-    picked = select(frame, detector, labels_path if labels_path.exists() else None)
+    is_camera = args.source.isdigit()
+    # Pass cap for live feed in camera mode; video stays on first frame
+    picked = select(frame, detector,
+                    labels_path if labels_path.exists() else None,
+                    cap=cap if is_camera else None)
     if picked is None:
         print("No target selected — exiting.")
         return 0
     bbox, class_id, name = picked
+    # After live-camera selection, grab a fresh frame to initialise on
+    if is_camera:
+        ok, frame = cap.read()
+        if not ok:
+            print("Failed to read frame after selection.")
+            return 1
     print(f"Tracking: {name!r}  class_id={class_id}  bbox={bbox}")
 
     # ── pipeline ─────────────────────────────────────────────────────
@@ -114,9 +124,13 @@ def main() -> int:
         if key == ord("q") or key == 27:   # q or Esc
             break
         if key == ord("r"):                # r = re-select target
-            picked = select(frame, detector, labels_path if labels_path.exists() else None)
+            picked = select(frame, detector,
+                            labels_path if labels_path.exists() else None,
+                            cap=cap if is_camera else None)
             if picked:
                 bbox, class_id, name = picked
+                if is_camera:
+                    ok, frame = cap.read()
                 pipeline.initialize(frame, bbox, class_id)
                 fps = 0.0
 
