@@ -89,6 +89,8 @@ def select(
     """
     labels = _load_labels(labels_path) if labels_path else []
     mouse: dict = {"x": 0, "y": 0, "clicked": None}
+    current_frame = frame.copy()
+    detections = detector.detect(current_frame)
 
     def on_mouse(event, px, py, flags, param):
         mouse["x"] = px
@@ -97,14 +99,10 @@ def select(
             mouse["clicked"] = (px, py)
 
     cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL)
-    # Show a frame first so the Qt backend creates the window handle before
-    # setMouseCallback — on Linux/Qt namedWindow alone is not enough.
+    # Flush once so Qt creates the window handle before setMouseCallback.
     cv2.imshow(WINDOW, current_frame)
     cv2.waitKey(1)
     cv2.setMouseCallback(WINDOW, on_mouse)
-
-    current_frame = frame.copy()
-    detections = detector.detect(current_frame)
 
     while True:
         # Live camera: refresh frame + detections continuously
