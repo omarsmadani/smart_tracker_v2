@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe scripts/download_models.py)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_state_machine.py -v)"
+    ]
+  }
+}

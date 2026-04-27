@@ -1,0 +1,13 @@
+# Dev requirements (Windows/macOS/Linux laptop). Python 3.11 or 3.12 recommended.
+# Python 3.14 is too new — most wheels below are not yet published for it.
+numpy>=1.24,<2.2
+opencv-python>=4.8
+pyyaml>=6.0
+scipy>=1.10
+
+# LiteRT (successor to tflite-runtime). Cross-platform incl. Windows wheels.
+# tflite-runtime itself has NO Windows wheels on PyPI — do not use on Windows.
+ai-edge-litert>=1.0.1
+
+# On Coral Dev Board Mini only (Linux aarch64):
+#   pip install tflite-runtime pycoral
