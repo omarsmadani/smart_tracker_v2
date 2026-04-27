@@ -97,6 +97,10 @@ def select(
             mouse["clicked"] = (px, py)
 
     cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL)
+    # Show a frame first so the Qt backend creates the window handle before
+    # setMouseCallback — on Linux/Qt namedWindow alone is not enough.
+    cv2.imshow(WINDOW, current_frame)
+    cv2.waitKey(1)
     cv2.setMouseCallback(WINDOW, on_mouse)
 
     current_frame = frame.copy()
