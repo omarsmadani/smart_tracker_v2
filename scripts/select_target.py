@@ -99,10 +99,16 @@ def select(
             mouse["clicked"] = (px, py)
 
     cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL)
-    # Flush once so Qt creates the window handle before setMouseCallback.
+    # On Linux/Qt the window handle isn't ready until the event loop runs.
+    # Retry setMouseCallback until it succeeds (usually 1-2 iterations).
     cv2.imshow(WINDOW, current_frame)
-    cv2.waitKey(1)
-    cv2.setMouseCallback(WINDOW, on_mouse)
+    for _ in range(10):
+        cv2.waitKey(50)
+        try:
+            cv2.setMouseCallback(WINDOW, on_mouse)
+            break
+        except cv2.error:
+            pass
 
     while True:
         # Live camera: refresh frame + detections continuously
