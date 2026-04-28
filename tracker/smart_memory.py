@@ -34,7 +34,7 @@ class SmartMemory:
             # LTM frozen in UNCERTAIN
 
         elif state == State.LOST:
-            pass  # no writes during LOST
+            pass
 
         elif state == State.RECOVERED:
             self._write_stm(feature, confidence)

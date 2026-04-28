@@ -1,5 +1,5 @@
 """
-Demo: run the full tracker on a camera or .mp4 file.
+Demo: run the full tracker on a camera or video file.
 
 Usage:
     python demo.py                        # webcam (index 0)
@@ -19,7 +19,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from pipeline.tracker_pipeline import TrackerPipeline
 from scripts.select_target import select
-from tracker.detector import Detector
 from tracker.state_machine import State
 from visualization.display import draw_fps, draw_tracking
 
@@ -29,8 +28,6 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--source", default="0",
                     help="Camera index (int) or path to .mp4/.avi file")
     ap.add_argument("--config", default="configs/tracker_params.yaml")
-    ap.add_argument("--show-all-detections", action="store_true",
-                    help="Draw all detector boxes (debug mode)")
     return ap.parse_args()
 
 
@@ -54,33 +51,30 @@ def main() -> int:
         print("Failed to read first frame.")
         return 1
 
-    # ── target selection ─────────────────────────────────────────────
-    detector = Detector(cfg["detector"])
-    labels_path = Path(cfg["detector"].get("labels_path", ""))
     is_camera = args.source.isdigit()
-    # Pass cap for live feed in camera mode; video stays on first frame
-    picked = select(frame, detector,
-                    labels_path if labels_path.exists() else None,
-                    cap=cap if is_camera else None)
-    if picked is None:
+
+    # ── target selection ─────────────────────────────────────────────
+    bbox = select(frame, cap=cap if is_camera else None)
+    if bbox is None:
         print("No target selected — exiting.")
         return 0
-    bbox, class_id, name = picked
+
     # After live-camera selection, grab a fresh frame to initialise on
     if is_camera:
         ok, frame = cap.read()
         if not ok:
             print("Failed to read frame after selection.")
             return 1
-    print(f"Tracking: {name!r}  class_id={class_id}  bbox={bbox}")
+
+    print(f"Target bbox: {bbox}")
 
     # ── pipeline ─────────────────────────────────────────────────────
     pipeline = TrackerPipeline(cfg)
-    pipeline.initialize(frame, bbox, class_id)
+    pipeline.initialize(frame, bbox)
 
     # Draw initialisation frame
     canvas = frame.copy()
-    draw_tracking(canvas, bbox, State.TRACKING, label=name)
+    draw_tracking(canvas, bbox, State.TRACKING)
     cv2.imshow("Edge Tracker", canvas)
     cv2.waitKey(1)
 
@@ -90,8 +84,7 @@ def main() -> int:
     while True:
         ok, frame = cap.read()
         if not ok:
-            # Loop video; do nothing for camera
-            if not str(args.source).isdigit():
+            if not is_camera:           # loop video
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 ok, frame = cap.read()
             if not ok:
@@ -99,39 +92,26 @@ def main() -> int:
 
         result = pipeline.process_frame(frame)
 
-        # FPS (exponential moving average)
         now = time.perf_counter()
         dt = now - last_t
         fps = fps * 0.9 + (1.0 / dt) * 0.1 if fps > 0 and dt > 0 else (1.0 / dt if dt > 0 else 0)
         last_t = now
 
-        # ── draw ─────────────────────────────────────────────────────
-        if args.show_all_detections and result.raw_detection:
-            from visualization.display import draw_detection
-            for d in pipeline.detector.detect(frame):  # already ran; cheap on still frames
-                draw_detection(frame, d.bbox,
-                               f"{d.class_id} {d.confidence:.2f}")
-
-        conf_str = f"{result.confidence:.2f}" if result.matched else ""
-        label = f"{name} {conf_str}".strip()
         draw_tracking(frame, result.bbox, result.state,
-                      label=label, recovered_frames=result.recovered_frames)
+                      recovered_frames=result.recovered_frames)
         draw_fps(frame, fps)
         _draw_state_badge(frame, result.state)
 
         cv2.imshow("Edge Tracker", frame)
         key = cv2.waitKey(1) & 0xFF
-        if key == ord("q") or key == 27:   # q or Esc
+        if key == ord("q") or key == 27:
             break
-        if key == ord("r"):                # r = re-select target
-            picked = select(frame, detector,
-                            labels_path if labels_path.exists() else None,
-                            cap=cap if is_camera else None)
-            if picked:
-                bbox, class_id, name = picked
+        if key == ord("r"):             # re-select target
+            bbox = select(frame, cap=cap if is_camera else None)
+            if bbox:
                 if is_camera:
                     ok, frame = cap.read()
-                pipeline.initialize(frame, bbox, class_id)
+                pipeline.initialize(frame, bbox)
                 fps = 0.0
 
     cap.release()
@@ -146,8 +126,8 @@ def _draw_state_badge(frame, state: State) -> None:
         State.LOST:      (0, 0, 255),
         State.RECOVERED: (255, 255, 0),
     }
-    color = colors[state]
     label = state.value
+    color = colors[state]
     (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
     x = frame.shape[1] - tw - 12
     cv2.rectangle(frame, (x - 4, 6), (x + tw + 4, th + 14), (0, 0, 0), -1)

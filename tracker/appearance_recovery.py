@@ -35,10 +35,10 @@ class AppearanceRecovery:
 
         return best_idx
 
-    def _mean_cosine(self, candidate: np.ndarray) -> float:
-        """Mean cosine similarity between candidate and all fingerprint vectors.
+    def mean_cosine(self, feature: np.ndarray) -> float:
+        """Mean cosine similarity between feature and stored fingerprint. Returns 0 if empty."""
+        return self._mean_cosine(feature)
 
-        Both sides are assumed L2-normalised, so cosine = dot product.
-        """
+    def _mean_cosine(self, candidate: np.ndarray) -> float:
         scores = [float(np.dot(candidate, fp)) for fp in self._fingerprint]
         return float(np.mean(scores)) if scores else 0.0

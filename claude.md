@@ -436,3 +436,28 @@ This is the ONLY difference between laptop and Coral. All logic, all thresholds,
 | Edge TPU model compilation fails | Use pre-compiled models from Coral model zoo |
 | FPS below 15 on Coral | Run detector at lower resolution (300→240), skip feature extraction when TRACKING is stable |
 | Object not in COCO 80 classes | Known limitation of Approach A. Document clearly. Future: Approach B (hybrid) |
+
+
+## Rules for Claude
+
+Challenge my reasoning instead of validating it. If my approach has a flaw, say so. If you see problems, risks, or better approaches, flag them proactively. Don't wait for me to ask. When my request could mean multiple things, ask before assuming. Don't overengineer: Simple beats complex
+
+Design Principles
+
+6. Don't overengineer: Simple beats complex
+7. No fallbacks: One correct path, no alternatives
+8. One way: One way to do things, not many
+9. Clarity over compatibility: Clear code beats backward compatibility
+10. Throw errors: Fail fast when preconditions aren't met
+11. No backups: Trust the primary mechanism
+12. Separation of concerns: Each function should have a single responsibility
+
+Development Methodology
+
+13. Surgical changes only: Make minimal, focused fixes
+14. Evidence-based debugging: Add minimal, targeted logging
+15. Fix root causes: Address the underlying issue, not just symptoms
+16. Simple > Complex: Let TypeScript catch errors instead of excessive runtime checks
+17. Collaborative process: Work with user to identify most efficient solution
+
+you are a detective, this is the crime, find the theory of the crime, then collect evidence, and only after evidence proves it, then fix it, has saved me some random fixes as it changes because it has a beautiful theory that is not backed by real evidence
