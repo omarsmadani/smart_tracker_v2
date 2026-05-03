@@ -32,8 +32,10 @@ def parse_args() -> argparse.Namespace:
 
 
 def open_source(source: str) -> cv2.VideoCapture:
-    src = int(source) if source.isdigit() else source
-    cap = cv2.VideoCapture(src)
+    if source.isdigit():
+        cap = cv2.VideoCapture(int(source), cv2.CAP_V4L2)
+    else:
+        cap = cv2.VideoCapture(source)
     if not cap.isOpened():
         raise RuntimeError(f"Cannot open source: {source!r}")
     return cap
