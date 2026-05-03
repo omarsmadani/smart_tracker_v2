@@ -32,10 +32,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def open_source(source: str) -> cv2.VideoCapture:
-    if source.isdigit():
-        cap = cv2.VideoCapture(int(source), cv2.CAP_V4L2)
-    else:
-        cap = cv2.VideoCapture(source)
+    # Use device path string for cameras so older OpenCV versions work (Coral board).
+    src = f"/dev/video{source}" if source.isdigit() else source
+    cap = cv2.VideoCapture(src)
     if not cap.isOpened():
         raise RuntimeError(f"Cannot open source: {source!r}")
     return cap
@@ -53,7 +52,7 @@ def main() -> int:
         print("Failed to read first frame.")
         return 1
 
-    is_camera = args.source.isdigit()
+    is_camera = args.source.isdigit()  # True when user passed an integer index
 
     # ── target selection ─────────────────────────────────────────────
     bbox = select(frame, cap=cap if is_camera else None)
